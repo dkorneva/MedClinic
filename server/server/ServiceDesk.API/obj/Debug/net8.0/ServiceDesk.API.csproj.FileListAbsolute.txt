@@ -304,3 +304,4 @@ D:\3 КУРС\6 семестр\Конструирования интернет-�
 D:\3 КУРС\6 семестр\Конструирования интернет-приложений\MedClinic\server\server\ServiceDesk.API\obj\Debug\net8.0\ServiceDesk.API.pdb
 D:\3 КУРС\6 семестр\Конструирования интернет-приложений\MedClinic\server\server\ServiceDesk.API\obj\Debug\net8.0\ServiceDesk.API.genruntimeconfig.cache
 D:\3 КУРС\6 семестр\Конструирования интернет-приложений\MedClinic\server\server\ServiceDesk.API\obj\Debug\net8.0\ref\ServiceDesk.API.dll
+D:\3 КУРС\6 семестр\Конструирования интернет-приложений\MedClinic\server\server\ServiceDesk.API\obj\Debug\net8.0\ServiceDesk.API.sourcelink.json

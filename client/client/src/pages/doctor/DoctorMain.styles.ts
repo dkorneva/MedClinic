@@ -87,6 +87,7 @@ export const mainRowStyle: CSSProperties = {
 }
 
 export const colFlexStyle: CSSProperties = { flex: 1 }
+
 // flex-grow: 1
 // Элемент может расти, чтобы занять доступное пространство.
 // Чем больше значение, тем больше элемент “тянется”.

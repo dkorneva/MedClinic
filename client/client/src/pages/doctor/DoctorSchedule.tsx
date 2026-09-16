@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Calendar, Empty, Table } from 'antd';
 import type { Dayjs } from 'dayjs';
@@ -20,18 +20,12 @@ import {
 } from './DoctorSchedule.styles';
 
 export default function DoctorSchedule() {
-  const [selectedDateKey, setSelectedDateKey] = useState<string>('');
+  const [selectedDateKey, setSelectedDateKey] = useState<string>(() => dayjs().format('YYYY-MM-DD'));
 
   const scheduleQuery = useQuery({
     queryKey: ['doctor-own-schedule'],
     queryFn: getMyDoctorSchedule,
   });
-
-  useEffect(() => {
-    if (!selectedDateKey && scheduleQuery.data?.length) {
-      setSelectedDateKey(toDateKey(scheduleQuery.data[0].startAt));
-    }
-  }, [scheduleQuery.data, selectedDateKey]);
 
   if (scheduleQuery.isLoading) {
     return <PageLoading />;

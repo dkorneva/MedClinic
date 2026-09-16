@@ -1,4 +1,6 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { type CSSProperties, useMemo, useState } from 'react';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { useQuery } from '@tanstack/react-query';
 import { Button, Space, Table } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../shared/api/http/client';
@@ -24,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function DoctorMain() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
 
   const newTicketsQuery = useQuery({
     queryKey: ['doctor-home-new-tickets'],
@@ -34,6 +37,12 @@ export default function DoctorMain() {
     queryKey: ['doctor-own-schedule'],
     queryFn: getMyDoctorSchedule,
   });
+
+  const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
+  const weekRows = useMemo(
+    () => buildWeekRows(scheduleQuery.data ?? [], weekStart),
+    [scheduleQuery.data, weekStart],
+  );
 
   if (newTicketsQuery.isLoading || scheduleQuery.isLoading) {
     return <PageLoading />;
@@ -54,8 +63,6 @@ export default function DoctorMain() {
       service: ticket.categoryName,
     }));
 
-  const weekRows = buildWeekRows(scheduleQuery.data ?? []);
-
   const patientsColumns = [
     {
       title: 'Пациенты на сегодня',
@@ -75,7 +82,28 @@ export default function DoctorMain() {
 
   const scheduleColumns = [
     {
-      title: 'Расписание',
+      title: (
+        <div style={scheduleTitleStyle}>
+          <span>Расписание</span>
+          <span style={weekRangeStyle}>{formatWeekRange(weekStart, weekEnd)}</span>
+          <Space.Compact>
+            <Button
+              aria-label="Предыдущая неделя"
+              icon={<LeftOutlined />}
+              size="small"
+              style={weekArrowButtonStyle}
+              onClick={() => setWeekStart((current) => addDays(current, -7))}
+            />
+            <Button
+              aria-label="Следующая неделя"
+              icon={<RightOutlined />}
+              size="small"
+              style={weekArrowButtonStyle}
+              onClick={() => setWeekStart((current) => addDays(current, 7))}
+            />
+          </Space.Compact>
+        </div>
+      ),
       dataIndex: 'schedule',
       key: 'schedule',
       render: (_: unknown, record: { day: string; text: string }) => (
@@ -123,30 +151,40 @@ export default function DoctorMain() {
   );
 }
 
-function buildWeekRows(slots: DoctorScheduleSlot[]) {
+function buildWeekRows(slots: DoctorScheduleSlot[], weekStart: Date) {
+  const weekEnd = addDays(weekStart, 7);
   const groups = new Map<string, DoctorScheduleSlot[]>();
 
-  slots.forEach((slot) => {
-    const key = new Date(slot.startAt).toLocaleDateString('sv-SE');
-    const current = groups.get(key) ?? [];
-    current.push(slot);
-    groups.set(key, current);
-  });
-
-  return Array.from(groups.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(0, 5)
-    .map(([key, daySlots]) => {
-      const date = new Date(daySlots[0].startAt);
-      const bookedCount = daySlots.filter((slot) => slot.isBooked).length;
-      const totalCount = daySlots.length;
-
-      return {
-        key,
-        day: date.toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: '2-digit' }),
-        text: bookedCount > 0 ? `Записей: ${bookedCount} из ${totalCount}` : `Свободных слотов: ${totalCount}`,
-      };
+  slots
+    .filter((slot) => {
+      const slotDate = new Date(slot.startAt);
+      return slotDate >= weekStart && slotDate < weekEnd;
+    })
+    .forEach((slot) => {
+      const key = toDateKey(new Date(slot.startAt));
+      const current = groups.get(key) ?? [];
+      current.push(slot);
+      groups.set(key, current);
     });
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(weekStart, index);
+    const key = toDateKey(date);
+    const daySlots = groups.get(key) ?? [];
+    const bookedCount = daySlots.filter((slot) => slot.isBooked).length;
+    const totalCount = daySlots.length;
+
+    return {
+      key,
+      day: date.toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+      text:
+        totalCount === 0
+          ? 'Слотов нет'
+          : bookedCount > 0
+            ? `Записей: ${bookedCount} из ${totalCount}`
+            : `Свободных слотов: ${totalCount}`,
+    };
+  });
 }
 
 function isSameLocalDate(value: string, date: Date) {
@@ -162,3 +200,55 @@ function isSameLocalDate(value: string, date: Date) {
 function formatTime(value: string) {
   return new Date(value).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
+
+function getWeekStart(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + mondayOffset);
+  return start;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekRange(start: Date, end: Date) {
+  const from = start.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+  const to = end.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `Неделя ${from} - ${to}`;
+}
+
+const scheduleTitleStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  width: '100%',
+};
+
+const weekRangeStyle: CSSProperties = {
+  marginLeft: 'auto',
+  color: 'rgba(0, 0, 0, 0.45)',
+  fontWeight: 400,
+};
+
+const weekArrowButtonStyle: CSSProperties = {
+  width: 28,
+  height: 24,
+  padding: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  lineHeight: 1,
+};

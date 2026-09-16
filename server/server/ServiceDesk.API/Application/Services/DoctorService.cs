@@ -77,10 +77,12 @@ public class DoctorService : IDoctorService
         var slots = await _db.DoctorTimeSlots
             .AsNoTracking()
             .Where(slot => slot.DoctorId == doctorId && !slot.IsBooked && slot.StartAt >= now)
-            .OrderBy(slot => slot.StartAt)
             .ToListAsync();
 
-        return slots.Select(slot => slot.ToResponse()).ToList();
+        return slots
+            .OrderBy(slot => slot.StartAt)
+            .Select(slot => slot.ToResponse())
+            .ToList();
     }
 
     public async Task<IReadOnlyList<DoctorScheduleSlotResponse>> GetScheduleAsync(int doctorId)
@@ -91,14 +93,13 @@ public class DoctorService : IDoctorService
             throw new NotFoundException($"Врач с id {doctorId} не найден.");
         }
 
-        return await _db.DoctorTimeSlots
+        var schedule = await _db.DoctorTimeSlots
             .AsNoTracking()
             .Where(slot => slot.DoctorId == doctorId)
             .Include(slot => slot.Ticket)
                 .ThenInclude(ticket => ticket!.Author)
             .Include(slot => slot.Ticket)
                 .ThenInclude(ticket => ticket!.Category)
-            .OrderBy(slot => slot.StartAt)
             .Select(slot => new DoctorScheduleSlotResponse
             {
                 Id = slot.Id,
@@ -110,20 +111,21 @@ public class DoctorService : IDoctorService
                 Status = slot.Ticket != null ? slot.Ticket.Status.ToString() : null
             })
             .ToListAsync();
+
+        return schedule.OrderBy(slot => slot.StartAt).ToList();
     }
 
     public async Task<IReadOnlyList<DoctorScheduleSlotResponse>> GetOwnScheduleAsync(string currentUserId)
     {
         var doctor = await GetCurrentDoctorAsync(currentUserId);
 
-        return await _db.DoctorTimeSlots
+        var schedule = await _db.DoctorTimeSlots
             .AsNoTracking()
             .Where(slot => slot.DoctorId == doctor.Id)
             .Include(slot => slot.Ticket)
                 .ThenInclude(ticket => ticket!.Author)
             .Include(slot => slot.Ticket)
                 .ThenInclude(ticket => ticket!.Category)
-            .OrderBy(slot => slot.StartAt)
             .Select(slot => new DoctorScheduleSlotResponse
             {
                 Id = slot.Id,
@@ -135,6 +137,8 @@ public class DoctorService : IDoctorService
                 Status = slot.Ticket != null ? slot.Ticket.Status.ToString() : null
             })
             .ToListAsync();
+
+        return schedule.OrderBy(slot => slot.StartAt).ToList();
     }
 
     public async Task<IReadOnlyList<DoctorScheduleSlotResponse>> UpdateScheduleAsync(int doctorId, UpdateDoctorScheduleRequest request)
@@ -152,22 +156,15 @@ public class DoctorService : IDoctorService
         var parsedSlots = ParseLocalSlots(request.Slots);
         var requestedSlots = new HashSet<DateTimeOffset>(parsedSlots);
 
-        if (parsedSlots.Any(slot => slot.UtcDateTime <= DateTimeOffset.UtcNow.UtcDateTime))
+        var now = DateTimeOffset.UtcNow;
+
+        if (parsedSlots.Any(slot => slot.UtcDateTime <= now.UtcDateTime))
         {
             throw new BusinessException("Нельзя добавить слот в прошлом.");
         }
 
-        var bookedRemovedSlots = doctor.TimeSlots
-            .Where(slot => slot.IsBooked)
-            .Any(slot => !requestedSlots.Contains(slot.StartAt));
-
-        if (bookedRemovedSlots)
-        {
-            throw new BusinessException("Нельзя удалить слот, который уже занят записью.");
-        }
-
         var removableSlots = doctor.TimeSlots
-            .Where(slot => !slot.IsBooked && !requestedSlots.Contains(slot.StartAt))
+            .Where(slot => IsFutureSlot(slot, now) && !slot.IsBooked && !requestedSlots.Contains(slot.StartAt))
             .ToList();
         _db.DoctorTimeSlots.RemoveRange(removableSlots);
 
@@ -254,22 +251,15 @@ public class DoctorService : IDoctorService
         var parsedSlots = ParseLocalSlots(request.Slots);
         var requestedSlots = new HashSet<DateTimeOffset>(parsedSlots);
 
-        if (parsedSlots.Any(slot => slot <= DateTimeOffset.UtcNow))
+        var now = DateTimeOffset.UtcNow;
+
+        if (parsedSlots.Any(slot => slot.UtcDateTime <= now.UtcDateTime))
         {
             throw new BusinessException("Нельзя добавить слот в прошлом.");
         }
 
-        var bookedRemovedSlots = doctor.TimeSlots
-            .Where(slot => slot.IsBooked)
-            .Any(slot => !requestedSlots.Contains(slot.StartAt));
-
-        if (bookedRemovedSlots)
-        {
-            throw new BusinessException("Нельзя удалить слот, который уже занят записью.");
-        }
-
         var removableSlots = doctor.TimeSlots
-            .Where(slot => !slot.IsBooked && !requestedSlots.Contains(slot.StartAt))
+            .Where(slot => IsFutureSlot(slot, now) && !slot.IsBooked && !requestedSlots.Contains(slot.StartAt))
             .ToList();
         _db.DoctorTimeSlots.RemoveRange(removableSlots);
 
@@ -368,6 +358,11 @@ public class DoctorService : IDoctorService
                 StartAt = slot,
                 IsBooked = false
             });
+    }
+
+    private static bool IsFutureSlot(DoctorTimeSlot slot, DateTimeOffset now)
+    {
+        return slot.StartAt.UtcDateTime > now.UtcDateTime;
     }
 
     private static string NormalizeRequired(string? value, string fieldName)

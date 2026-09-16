@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using ServiceDesk.API.Application.Abstractions.Persistence;
 using ServiceDesk.API.Application.Abstractions.Services;
 using ServiceDesk.API.DTOs.Auth;
 using ServiceDesk.API.Exceptions;
@@ -9,15 +11,20 @@ namespace ServiceDesk.API.Application.Services;
 
 public class AuthService : IAuthService
 {
+    private const string DefaultDoctorSpecialty = "Не указана";
+
+    private readonly IAppDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
+        IAppDbContext db,
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         ILogger<AuthService> logger)
     {
+        _db = db;
         _userManager = userManager;
         _tokenService = tokenService;
         _logger = logger;
@@ -83,6 +90,42 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("User not found.");
         }
 
+        if (role == "Doctor")
+        {
+            await EnsureDoctorCardAsync(user);
+        }
+
         return new MeResponse(user.Id, user.Email!, user.DisplayName, role);
+    }
+
+    private async Task EnsureDoctorCardAsync(ApplicationUser user)
+    {
+        var email = NormalizeRequired(user.Email, "Email пользователя");
+        var doctorExists = await _db.Doctors.AnyAsync(item => item.Email == email);
+        if (doctorExists)
+        {
+            return;
+        }
+
+        _db.Doctors.Add(new Doctor
+        {
+            FullName = NormalizeRequired(user.DisplayName, "ФИО пользователя"),
+            Email = email,
+            Specialty = DefaultDoctorSpecialty,
+            Status = DoctorStatus.Active
+        });
+
+        await _db.SaveChangesAsync();
+    }
+
+    private static string NormalizeRequired(string? value, string fieldName)
+    {
+        var normalized = (value ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new BusinessException($"{fieldName} не должно быть пустым.");
+        }
+
+        return normalized;
     }
 }
