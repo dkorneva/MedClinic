@@ -431,31 +431,3 @@ cd server/server
 dotnet test
 ```
 
-## Важные замечания
-
-- Клиентский `package.json` находится в папке `client/client`, поэтому команды `npm install` и `npm run dev` нужно выполнять именно там.
-- Backend-проект находится в папке `server/server/ServiceDesk.API`.
-- Для работы backend требуется корректная строка подключения к SQL Server.
-- JWT-ключ в `appsettings.Development.json` предназначен только для локальной разработки.
-- Перед публикацией проекта на GitHub рекомендуется исключить из репозитория `node_modules`, `bin`, `obj`, `dist`, `.vs` и другие генерируемые файлы.
-
-## Возможные темы для GitHub
-
-```text
-react
-typescript
-vite
-aspnet-core
-dotnet
-entity-framework-core
-jwt-authentication
-signalr
-sql-server
-medical-clinic
-appointment-system
-healthcare
-```
-
-## Краткое описание репозитория
-
-Full-stack веб-приложение для управления медицинской клиникой: запись пациентов на прием, расписание врачей, обработка заявок, медицинские записи, роли пользователей и административная аналитика.
