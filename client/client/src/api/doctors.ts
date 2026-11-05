@@ -31,14 +31,6 @@ export interface DoctorListQuery {
   specialty?: string;
 }
 
-export interface DoctorPayload {
-  fullName: string;
-  email: string;
-  specialty: string;
-  status: DoctorStatus;
-  slots: string[];
-}
-
 function buildQuery(params: DoctorListQuery = {}) {
   const searchParams = new URLSearchParams();
 
@@ -76,14 +68,4 @@ export function updateDoctorSchedule(doctorId: number, slots: string[]) {
   return apiClient.put<DoctorScheduleSlot[]>(`/api/doctors/${doctorId}/schedule`, { slots });
 }
 
-export function createDoctor(payload: DoctorPayload) {
-  return apiClient.post<Doctor>('/api/doctors', payload);
-}
 
-export function updateDoctor(id: number, payload: DoctorPayload) {
-  return apiClient.put<Doctor>(`/api/doctors/${id}`, payload);
-}
-
-export function deleteDoctor(id: number) {
-  return apiClient.delete<void>(`/api/doctors/${id}`);
-}

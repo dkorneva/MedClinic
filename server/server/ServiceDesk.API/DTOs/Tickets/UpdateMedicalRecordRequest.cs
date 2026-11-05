@@ -8,6 +8,6 @@ public sealed class UpdateMedicalRecordRequest
     public int DiagnosisId { get; set; }
 
     [Required]
-    [MaxLength(2000)]
+    [TrimmedTextLength]
     public string Treatment { get; set; } = string.Empty;
 }

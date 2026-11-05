@@ -198,109 +198,6 @@ public class DoctorService : IDoctorService
             .ToList();
     }
 
-    public async Task<DoctorResponse> CreateAsync(CreateDoctorRequest request)
-    {
-        var fullName = NormalizeRequired(request.FullName, "ФИО врача");
-        var email = NormalizeRequired(request.Email, "Email врача");
-        var specialty = NormalizeRequired(request.Specialty, "Специальность врача");
-        var status = ParseStatus(request.Status);
-
-        if (await _db.Doctors.AnyAsync(doctor => doctor.Email == email))
-        {
-            throw new BusinessException("Врач с таким email уже существует.");
-        }
-
-        var parsedSlots = ParseLocalSlots(request.Slots);
-
-        if (parsedSlots.Any(slot => slot <= DateTimeOffset.UtcNow))
-        {
-            throw new BusinessException("Нельзя добавить слот в прошлом.");
-        }
-
-        var doctor = new Doctor
-        {
-            FullName = fullName,
-            Email = email,
-            Specialty = specialty,
-            Status = status,
-            TimeSlots = CreateSlots(parsedSlots).ToList()
-        };
-
-        _db.Doctors.Add(doctor);
-        await _db.SaveChangesAsync();
-        return doctor.ToResponse();
-    }
-
-    public async Task<DoctorResponse> UpdateAsync(int id, UpdateDoctorRequest request)
-    {
-        var doctor = await _db.Doctors
-            .Include(item => item.TimeSlots)
-            .FirstOrDefaultAsync(item => item.Id == id)
-            ?? throw new NotFoundException($"Врач с id {id} не найден.");
-
-        var fullName = NormalizeRequired(request.FullName, "ФИО врача");
-        var email = NormalizeRequired(request.Email, "Email врача");
-        var specialty = NormalizeRequired(request.Specialty, "Специальность врача");
-        var status = ParseStatus(request.Status);
-
-        if (await _db.Doctors.AnyAsync(existing => existing.Id != id && existing.Email == email))
-        {
-            throw new BusinessException("Врач с таким email уже существует.");
-        }
-
-        var parsedSlots = ParseLocalSlots(request.Slots);
-        var requestedSlots = new HashSet<DateTimeOffset>(parsedSlots);
-
-        var now = DateTimeOffset.UtcNow;
-
-        if (parsedSlots.Any(slot => slot.UtcDateTime <= now.UtcDateTime))
-        {
-            throw new BusinessException("Нельзя добавить слот в прошлом.");
-        }
-
-        var removableSlots = doctor.TimeSlots
-            .Where(slot => IsFutureSlot(slot, now) && !slot.IsBooked && !requestedSlots.Contains(slot.StartAt))
-            .ToList();
-        _db.DoctorTimeSlots.RemoveRange(removableSlots);
-
-        var existingSlots = doctor.TimeSlots
-            .Select(slot => slot.StartAt)
-            .ToHashSet();
-
-        foreach (var slot in requestedSlots.Where(slot => !existingSlots.Contains(slot)))
-        {
-            doctor.TimeSlots.Add(new DoctorTimeSlot
-            {
-                StartAt = slot,
-                IsBooked = false
-            });
-        }
-
-        doctor.FullName = fullName;
-        doctor.Email = email;
-        doctor.Specialty = specialty;
-        doctor.Status = status;
-
-        await _db.SaveChangesAsync();
-        return doctor.ToResponse();
-    }
-
-    public async Task DeleteAsync(int id)
-    {
-        var doctor = await _db.Doctors
-            .Include(item => item.TimeSlots)
-            .FirstOrDefaultAsync(item => item.Id == id)
-            ?? throw new NotFoundException($"Врач с id {id} не найден.");
-
-        if (await _db.Tickets.AnyAsync(ticket => ticket.DoctorId == id))
-        {
-            throw new BusinessException("Нельзя удалить врача, у которого уже есть записи.");
-        }
-
-        _db.Doctors.Remove(doctor);
-        await _db.SaveChangesAsync();
-    }
-
     private async Task<Doctor> GetCurrentDoctorAsync(string currentUserId)
     {
         var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(item => item.Id == currentUserId)
@@ -350,39 +247,8 @@ public class DoctorService : IDoctorService
             .ToList();
     }
 
-    private static IEnumerable<DoctorTimeSlot> CreateSlots(IReadOnlyList<DateTimeOffset> requestedSlots)
-    {
-        return requestedSlots
-            .Select(slot => new DoctorTimeSlot
-            {
-                StartAt = slot,
-                IsBooked = false
-            });
-    }
-
     private static bool IsFutureSlot(DoctorTimeSlot slot, DateTimeOffset now)
     {
         return slot.StartAt.UtcDateTime > now.UtcDateTime;
-    }
-
-    private static string NormalizeRequired(string? value, string fieldName)
-    {
-        var normalized = (value ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            throw new BusinessException($"{fieldName} не должно быть пустым.");
-        }
-
-        return normalized;
-    }
-
-    private static DoctorStatus ParseStatus(string? status)
-    {
-        if (!Enum.TryParse<DoctorStatus>((status ?? string.Empty).Trim(), true, out var parsed))
-        {
-            throw new BusinessException("Некорректный статус врача.");
-        }
-
-        return parsed;
     }
 }

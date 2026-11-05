@@ -45,7 +45,7 @@ public class CategoryService : ICategoryService
         var doctorSpecialty = await NormalizeDoctorSpecialtyAsync(request.DoctorSpecialty);
         var price = NormalizePrice(request.Price);
 
-        if (await _db.Categories.AnyAsync(category => category.Name == name))
+        if (await _db.Categories.AnyAsync(category => category.Name == name && category.DoctorSpecialty == doctorSpecialty))
         {
             throw new BusinessException("Услуга с таким названием уже существует.");
         }
@@ -79,7 +79,7 @@ public class CategoryService : ICategoryService
         var doctorSpecialty = await NormalizeDoctorSpecialtyAsync(request.DoctorSpecialty);
         var price = NormalizePrice(request.Price);
 
-        if (await _db.Categories.AnyAsync(existing => existing.Id != id && existing.Name == name))
+        if (await _db.Categories.AnyAsync(existing => existing.Id != id && existing.Name == name && existing.DoctorSpecialty == doctorSpecialty))
         {
             throw new BusinessException("Услуга с таким названием уже существует.");
         }
@@ -117,11 +117,14 @@ public class CategoryService : ICategoryService
 
     private static string NormalizeName(string? name)
     {
-        var normalized = (name ?? string.Empty).Trim();
+        var normalized = name ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(normalized))
+        if (normalized.Length < 2 || normalized.Length > 100 || normalized != normalized.Trim()
+            || normalized.EndsWith('.')
+            || !System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^[A-Za-zА-Яа-яЁё0-9 ()/.,-]+$")
+            || !System.Text.RegularExpressions.Regex.IsMatch(normalized, @"[A-Za-zА-Яа-яЁё]"))
         {
-            throw new BusinessException("Название услуги не должно быть пустым.");
+            throw new BusinessException("Название услуги: 2–100 символов, минимум одна буква; допустимы буквы, цифры, пробел, дефис, скобки, точка, запятая и /. Пробелы по краям и точка в конце запрещены.");
         }
 
         return normalized;
@@ -152,6 +155,10 @@ public class CategoryService : ICategoryService
             throw new BusinessException("Стоимость услуги должна быть больше нуля.");
         }
 
-        return decimal.Round(price, 2, MidpointRounding.AwayFromZero);
+        if (decimal.Round(price, 2) != price)
+        {
+            throw new BusinessException("Стоимость услуги должна содержать не более двух знаков после запятой.");
+        }
+        return price;
     }
 }

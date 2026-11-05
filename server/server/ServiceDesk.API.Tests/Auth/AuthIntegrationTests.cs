@@ -18,7 +18,7 @@ public class AuthIntegrationTests : IntegrationTestBase, IClassFixture<ServiceDe
         var email = $"register.{Guid.NewGuid():N}@test.local";
 
         var response = await Client.PostAsJsonAsync("/api/auth/register",
-            new RegisterRequest(email, "Password123!", "Register User"));
+            new RegisterRequest(email, "Password123!", "Register User", "Password123!"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -53,7 +53,7 @@ public class AuthIntegrationTests : IntegrationTestBase, IClassFixture<ServiceDe
         const string displayName = "Current Patient";
 
         var registerResponse = await Client.PostAsJsonAsync("/api/auth/register",
-            new RegisterRequest(email, "Password123!", displayName));
+            new RegisterRequest(email, "Password123!", displayName, "Password123!"));
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var auth = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();

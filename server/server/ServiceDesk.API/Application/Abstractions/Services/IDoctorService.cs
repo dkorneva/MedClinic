@@ -10,7 +10,4 @@ public interface IDoctorService
     Task<IReadOnlyList<DoctorScheduleSlotResponse>> GetScheduleAsync(int doctorId);
     Task<IReadOnlyList<DoctorScheduleSlotResponse>> GetOwnScheduleAsync(string currentUserId);
     Task<IReadOnlyList<DoctorScheduleSlotResponse>> UpdateScheduleAsync(int doctorId, UpdateDoctorScheduleRequest request);
-    Task<DoctorResponse> CreateAsync(CreateDoctorRequest request);
-    Task<DoctorResponse> UpdateAsync(int id, UpdateDoctorRequest request);
-    Task DeleteAsync(int id);
 }

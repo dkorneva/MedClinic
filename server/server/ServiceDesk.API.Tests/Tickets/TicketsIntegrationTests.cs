@@ -119,7 +119,7 @@ public class TicketsIntegrationTests : IntegrationTestBase, IClassFixture<Servic
 
         var response = await Client.PostAsJsonAsync("/api/tickets", new CreateTicketRequest
         {
-            Description = $"Appointment {Guid.NewGuid():N}",
+            Description = $"Patient reports persistent symptoms during the week {Guid.NewGuid():N}",
             DoctorSpecialty = doctor.Specialty,
             CategoryId = categoryId,
             DoctorId = doctor.Id,
@@ -140,7 +140,7 @@ public class TicketsIntegrationTests : IntegrationTestBase, IClassFixture<Servic
         SetBearerToken(patientToken);
         var response = await Client.PostAsJsonAsync("/api/tickets", new CreateTicketRequest
         {
-            Description = $"Appointment {Guid.NewGuid():N}",
+            Description = $"Patient reports persistent symptoms during the week {Guid.NewGuid():N}",
             DoctorSpecialty = doctorSpecialty,
             CategoryId = categoryId,
             DoctorId = doctorId,

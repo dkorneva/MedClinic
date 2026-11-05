@@ -57,6 +57,28 @@ describe('RegisterPage', () => {
     mockedUseAuth.mockReset();
   });
 
+  it.each([
+    ['Иван3', 'Qwerty1!'],
+    [' Иван', 'Qwerty1!'],
+    ['Иван', 'qwerty1!'],
+    ['Иван', 'QWERTY1!'],
+    ['Иван', 'Qwerty!'],
+    ['Иван', 'Qwerty1'],
+  ])('blocks invalid registration for name %s and password %s', async (name, password) => {
+    const user = userEvent.setup();
+    const auth = createAuthValue();
+    mockedUseAuth.mockReturnValue(auth);
+    renderRegisterPage();
+    const [nameInput, emailInput, passwordInput, confirmationInput] = getInputs();
+    await user.type(nameInput!, name);
+    await user.type(emailInput!, 'patient@example.com');
+    await user.type(passwordInput!, password);
+    await user.type(confirmationInput!, password);
+    await user.click(screen.getByRole('button'));
+    await waitFor(() => expect(document.querySelector('.ant-form-item-explain-error')).toBeInTheDocument());
+    expect(auth.register).not.toHaveBeenCalled();
+  });
+
   it('renders required fields and submit button', () => {
     mockedUseAuth.mockReturnValue(createAuthValue());
 
@@ -100,6 +122,7 @@ describe('RegisterPage', () => {
         'new.patient@example.com',
         'P@ssw0rd',
         'Patient',
+        'P@ssw0rd',
       );
     });
 

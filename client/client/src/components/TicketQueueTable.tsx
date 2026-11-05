@@ -392,8 +392,8 @@ export default function TicketQueueTable({ title, description, mode }: Props) {
             return;
           }
 
-          if (!selectedDiagnosisId || !treatment.trim()) {
-            void message.warning('Выберите диагноз и заполните назначенное лечение.');
+          if (!selectedDiagnosisId || treatment.trim().length < 50 || treatment.trim().length > 2000) {
+            void message.warning('Выберите диагноз и введите рекомендации длиной от 50 до 2000 символов.');
             return;
           }
 

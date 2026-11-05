@@ -23,7 +23,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>, IAppDbContext
         base.OnModelCreating(builder);
 
         builder.Entity<Category>()
-            .HasIndex(category => category.Name)
+            .HasIndex(category => new { category.DoctorSpecialty, category.Name })
             .IsUnique();
 
         builder.Entity<Category>()

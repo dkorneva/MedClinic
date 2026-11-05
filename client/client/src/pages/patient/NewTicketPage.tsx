@@ -308,12 +308,11 @@ export default function NewTicketPage() {
           label="Жалоба"
           rules={[
             { required: true, message: 'Введите жалобу' },
-            { max: 2000, message: 'Максимум 2000 символов' },
+            { min: 50, max: 2000, transform: (value: string) => value?.trim(), message: 'Жалоба должна содержать от 50 до 2000 символов' },
           ]}
         >
           <TextArea
             rows={6}
-            maxLength={2000}
             showCount
             placeholder="Опишите жалобы и причину записи"
           />

@@ -19,7 +19,6 @@ export const APP_ROUTES = {
   adminMain: '/admin/main',
   adminSchedule: '/admin/schedule',
   adminPatients: '/admin/patients',
-  adminDoctors: '/admin/doctors',
   adminReports: '/admin/reports',
   adminCategories: '/admin/categories',
   adminUsers: '/admin/users',

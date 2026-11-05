@@ -52,7 +52,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(values.displayName, values.email, values.password, 'Patient');
+      await register(values.displayName, values.email, values.password, 'Patient', values.confirmPassword);
     } catch (err) {
       if (err instanceof ApiError) { 
         if (err.status === 400) { 
@@ -118,7 +118,11 @@ export default function RegisterPage() {
           <Form.Item
             label="Имя"
             name="displayName"
-            rules={[{ required: true, message: 'Введите имя' }]}
+            rules={[
+              { required: true, message: 'Введите имя' },
+              { min: 2, max: 30, message: 'Имя должно содержать от 2 до 30 символов' },
+              { pattern: /^[A-Za-zА-Яа-яЁё-](?:[A-Za-zА-Яа-яЁё -]*[A-Za-zА-Яа-яЁё-])?$/, message: 'Допустимы буквы, пробел и дефис; пробелы по краям запрещены' },
+            ]}
           >
             <Input placeholder="Иван Иванов" autoComplete="name" />
           </Form.Item>
@@ -139,7 +143,8 @@ export default function RegisterPage() {
             name="password"
             rules={[
               { required: true, message: 'Введите пароль' },
-              { min: 6, message: 'Пароль должен содержать минимум 6 символов' },
+               { min: 6, message: 'Пароль должен содержать минимум 6 символов' },
+              { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])[\s\S]+$/, message: 'Пароль должен содержать строчную и заглавную латинские буквы, цифру и специальный символ' },
             ]}
           >
             <Input.Password placeholder="Пароль" autoComplete="new-password" />

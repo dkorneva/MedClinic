@@ -250,7 +250,7 @@ namespace ServiceDesk.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("DoctorSpecialty", "Name")
                         .IsUnique();
 
                     b.ToTable("Categories");

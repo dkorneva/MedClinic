@@ -1,0 +1,25 @@
+# Dependencies and generated output
+node_modules/
+bin/
+obj/
+dist/
+coverage/
+TestResults/
+*.tsbuildinfo
+
+# Local IDE settings
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and operating system files
+*.log
+.DS_Store
+Thumbs.db

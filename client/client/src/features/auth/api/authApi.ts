@@ -7,6 +7,7 @@ interface LoginRequest {
 }
 
 interface RegisterRequest {
+  confirmPassword: string;
   displayName: string;
   email: string;
   password: string;

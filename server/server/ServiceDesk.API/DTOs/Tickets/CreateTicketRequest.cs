@@ -6,7 +6,7 @@ namespace ServiceDesk.API.DTOs.Tickets;
 public sealed class CreateTicketRequest
 {
     [Required]
-    [MaxLength(2000)]
+    [TrimmedTextLength]
     public string Description { get; set; } = string.Empty;
 
     [Required]
@@ -23,5 +23,7 @@ public sealed class CreateTicketRequest
     public int DoctorTimeSlotId { get; set; }
 
     [Required]
+    [System.Text.Json.Serialization.JsonRequired]
+    [EnumDataType(typeof(TicketPriority))]
     public TicketPriority Priority { get; set; }
 }

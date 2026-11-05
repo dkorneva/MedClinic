@@ -6,7 +6,6 @@ import { RequireRole } from '../components/RequireRole';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import TicketDetailPage from '../pages/TicketDetailPage';
-import AdminDoctors from '../pages/admin/AdminDoctors';
 import AdminMain from '../pages/admin/AdminMain';
 import AdminPatients from '../pages/admin/AdminPatients';
 import AdminReports from '../pages/admin/AdminReports';
@@ -54,7 +53,6 @@ export function AppRouter() {
           <Route path={APP_ROUTES.adminMain} element={<RequireRole roles={['Admin']}><AdminMain /></RequireRole>} />
           <Route path={APP_ROUTES.adminSchedule} element={<RequireRole roles={['Admin']}><AdminSchedule /></RequireRole>} />
           <Route path={APP_ROUTES.adminPatients} element={<RequireRole roles={['Admin']}><AdminPatients /></RequireRole>} />
-          <Route path={APP_ROUTES.adminDoctors} element={<RequireRole roles={['Admin']}><AdminDoctors /></RequireRole>} />
           <Route path={APP_ROUTES.adminReports} element={<RequireRole roles={['Admin']}><AdminReports /></RequireRole>} />
           <Route path={APP_ROUTES.adminCategories} element={<RequireRole roles={['Admin']}><CategoriesPage /></RequireRole>} />
           <Route path={APP_ROUTES.adminUsers} element={<RequireRole roles={['Admin']}><UsersPage /></RequireRole>} />

@@ -11,7 +11,7 @@ interface AuthContextValue {
   role: Role | null;
   isAuthenticated: boolean;
   login(email: string, password: string): Promise<void>;
-  register(displayName: string, email: string, password: string, role: Role): Promise<void>;
+  register(displayName: string, email: string, password: string, role: Role, confirmPassword: string): Promise<void>;
   logout(): void;
   init(): Promise<void>;
 }
@@ -71,12 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     roleValue: Role,
+    confirmPassword: string,
   ): Promise<void> => {
     const { accessToken } = await registerRequest({
       displayName,
       email,
       password,
       role: roleValue,
+      confirmPassword,
     });
 
     tokenStorage.set(accessToken);

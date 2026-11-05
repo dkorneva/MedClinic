@@ -118,7 +118,7 @@ export default function CategoriesPage() {
   const submitModal = async () => {
     const values = await form.validateFields();
     const payload: CategoryFormValues = {
-      name: values.name.trim(),
+      name: values.name,
       doctorSpecialty: values.doctorSpecialty,
       price: Number(values.price),
     };
@@ -233,10 +233,11 @@ export default function CategoriesPage() {
             name="name"
             rules={[
               { required: true, message: 'Введите название услуги' },
-              { max: 100, message: 'Максимум 100 символов' },
+               { min: 2, max: 100, message: 'От 2 до 100 символов' },
+              { validator: (_, value: string) => !value || (value === value.trim() && !value.endsWith('.') && /^[A-Za-zА-Яа-яЁё0-9 ()/.,-]+$/.test(value) && /[A-Za-zА-Яа-яЁё]/.test(value)) ? Promise.resolve() : Promise.reject(new Error('Название должно содержать букву; запрещены недопустимые символы, пробелы по краям и точка в конце')) },
             ]}
           >
-            <Input maxLength={100} placeholder="Например, первичный прием терапевта" />
+            <Input placeholder="Например, первичный прием терапевта" />
           </Form.Item>
 
           <Form.Item
@@ -250,11 +251,12 @@ export default function CategoriesPage() {
           <Form.Item
             label="Стоимость услуги"
             name="price"
-            rules={[{ required: true, message: 'Укажите стоимость услуги' }]}
+            rules={[
+              { required: true, message: 'Укажите стоимость услуги' },
+              { validator: (_, value: number) => value == null || (Number.isFinite(value) && value > 0 && Math.abs(value * 100 - Math.round(value * 100)) < 1e-8) ? Promise.resolve() : Promise.reject(new Error('Стоимость должна быть больше нуля и содержать не более двух знаков после запятой')) },
+            ]}
           >
             <InputNumber<number>
-              min={0.01}
-              precision={2}
               step={100}
               style={{ width: '100%' }}
               placeholder="Например, 2500"

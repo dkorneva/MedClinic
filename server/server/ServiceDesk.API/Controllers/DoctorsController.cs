@@ -60,23 +60,6 @@ public class DoctorsController : ControllerBase
         return Ok(await _doctorService.GetOwnScheduleAsync(userId));
     }
 
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(DoctorResponse), StatusCodes.Status201Created)]
-    public async Task<ActionResult<DoctorResponse>> Create([FromBody] CreateDoctorRequest request)
-    {
-        var result = await _doctorService.CreateAsync(request);
-        return CreatedAtAction(nameof(GetAll), new { includeInactive = true }, result);
-    }
-
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(DoctorResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<DoctorResponse>> Update(int id, [FromBody] UpdateDoctorRequest request)
-    {
-        return Ok(await _doctorService.UpdateAsync(id, request));
-    }
-
     [HttpPut("{id:int}/schedule")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(IEnumerable<DoctorScheduleSlotResponse>), StatusCodes.Status200OK)]
@@ -85,12 +68,4 @@ public class DoctorsController : ControllerBase
         return Ok(await _doctorService.UpdateScheduleAsync(id, request));
     }
 
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
-    {
-        await _doctorService.DeleteAsync(id);
-        return NoContent();
-    }
 }

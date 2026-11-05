@@ -27,12 +27,16 @@ public class TicketService : ITicketService
             throw new UnauthorizedException("Only patients can create appointments.");
         }
 
-        var description = request.Description.Trim();
+        if (!Enum.IsDefined(request.Priority))
+        {
+            throw new BusinessException("Приоритет должен быть Low, Medium или High.");
+        }
+        var description = (request.Description ?? string.Empty).Trim();
         var doctorSpecialty = request.DoctorSpecialty.Trim();
 
-        if (string.IsNullOrWhiteSpace(description))
+        if (description.Length is < 50 or > 2000)
         {
-            throw new BusinessException("Complaint is required.");
+            throw new BusinessException("Жалоба должна содержать от 50 до 2000 символов.");
         }
 
         if (string.IsNullOrWhiteSpace(doctorSpecialty))
@@ -329,10 +333,10 @@ public class TicketService : ITicketService
             throw new BusinessException("Medical record cannot be updated for final appointment.");
         }
 
-        var treatment = request.Treatment.Trim();
-        if (string.IsNullOrWhiteSpace(treatment))
+        var treatment = (request.Treatment ?? string.Empty).Trim();
+        if (treatment.Length is < 50 or > 2000)
         {
-            throw new BusinessException("Treatment is required.");
+            throw new BusinessException("Рекомендации должны содержать от 50 до 2000 символов.");
         }
 
         var diagnosis = await _db.Diagnoses

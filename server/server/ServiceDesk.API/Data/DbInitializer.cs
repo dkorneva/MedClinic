@@ -210,7 +210,7 @@ public static class DbInitializer
     {
         foreach (var categorySeed in Categories)
         {
-            var existingCategory = await db.Categories.FirstOrDefaultAsync(existing => existing.Name == categorySeed.Name);
+            var existingCategory = await db.Categories.FirstOrDefaultAsync(existing => existing.Name == categorySeed.Name && existing.DoctorSpecialty == categorySeed.DoctorSpecialty);
             if (existingCategory is not null)
             {
                 existingCategory.DoctorSpecialty = categorySeed.DoctorSpecialty;
@@ -264,7 +264,7 @@ public static class DbInitializer
             .Where(user => user.Email != null)
             .ToDictionaryAsync(user => user.Email!, StringComparer.OrdinalIgnoreCase);
 
-        var categoriesByName = await db.Categories.ToDictionaryAsync(category => category.Name, StringComparer.OrdinalIgnoreCase);
+        var categoriesByName = await db.Categories.ToDictionaryAsync(category => $"{category.DoctorSpecialty}|{category.Name}", StringComparer.OrdinalIgnoreCase);
         var doctorsByEmail = await db.Doctors.Include(doctor => doctor.TimeSlots).ToDictionaryAsync(doctor => doctor.Email, StringComparer.OrdinalIgnoreCase);
         var diagnosesByKey = await db.Diagnoses.ToDictionaryAsync(diagnosis => $"{diagnosis.Specialty}|{diagnosis.Name}", StringComparer.OrdinalIgnoreCase);
 
@@ -274,8 +274,8 @@ public static class DbInitializer
         foreach (var seed in Tickets)
         {
             if (!usersByEmail.TryGetValue(seed.PatientEmail, out var patient) ||
-                !categoriesByName.TryGetValue(seed.CategoryName, out var category) ||
-                !doctorsByEmail.TryGetValue(seed.DoctorEmail, out var doctor))
+                !doctorsByEmail.TryGetValue(seed.DoctorEmail, out var doctor) ||
+                !categoriesByName.TryGetValue($"{doctor.Specialty}|{seed.CategoryName}", out var category))
             {
                 continue;
             }
